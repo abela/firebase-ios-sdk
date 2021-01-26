@@ -14,15 +14,29 @@
 
 #import <XCTest/XCTest.h>
 
-#import "FirebaseStorage/Sources/FIRStorageUtils.h"
-
 #import "FirebaseStorage/Sources/FIRStoragePath.h"
+#import "FirebaseStorage/Sources/FIRStorageReference_Private.h"
+#import "FirebaseStorage/Sources/FIRStorageUtils.h"
+#import "FirebaseStorage/Tests/Unit/FIRStorageTestHelpers.h"
 
 @interface FIRStorageUtilsTests : XCTestCase
+
+@property(strong, nonatomic) id app;
 
 @end
 
 @implementation FIRStorageUtilsTests
+
+- (void)setUp {
+  [super setUp];
+
+  id mockOptions = OCMClassMock([FIROptions class]);
+  OCMStub([mockOptions storageBucket]).andReturn(@"bucket");
+
+  self.app = [FIRStorageTestHelpers mockedApp];
+  OCMStub([self.app name]).andReturn(kFIRStorageAppName);
+  OCMStub([(FIRApp *)self.app options]).andReturn(mockOptions);
+}
 
 - (void)testCommonExtensionToMIMEType {
   NSDictionary<NSString *, NSString *> *extensionToMIMEType = @{
@@ -97,15 +111,19 @@
 }
 
 - (void)testDefaultRequestForFullPath {
+  FIRStorage *storage = [FIRStorage storageForApp:self.app URL:@"gs://bucket.firebase.com"];
   FIRStoragePath *path = [[FIRStoragePath alloc] initWithBucket:@"bucket" object:@"path/to/object"];
-  NSURLRequest *request = [FIRStorageUtils defaultRequestForPath:path];
+  FIRStorageReference *ref = [[FIRStorageReference alloc] initWithStorage:storage path:path];
+  NSURLRequest *request = [FIRStorageUtils defaultRequestForReference:ref];
   XCTAssertEqualObjects([request.URL absoluteString],
                         @"https://firebasestorage.googleapis.com/v0/b/bucket/o/path%2Fto%2Fobject");
 }
 
 - (void)testDefaultRequestForNoPath {
+  FIRStorage *storage = [FIRStorage storageForApp:self.app URL:@"gs://bucket.firebase.com"];
   FIRStoragePath *path = [[FIRStoragePath alloc] initWithBucket:@"bucket" object:nil];
-  NSURLRequest *request = [FIRStorageUtils defaultRequestForPath:path];
+  FIRStorageReference *ref = [[FIRStorageReference alloc] initWithStorage:storage path:path];
+  NSURLRequest *request = [FIRStorageUtils defaultRequestForReference:ref];
   XCTAssertEqualObjects([request.URL absoluteString],
                         @"https://firebasestorage.googleapis.com/v0/b/bucket/o");
 }

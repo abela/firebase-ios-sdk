@@ -138,6 +138,38 @@
   [FIRStorageTestHelpers waitForExpectation:self];
 }
 
+- (void)testDefaultListWithEmulator {
+  XCTestExpectation *expectation = [self expectationWithDescription:@"testDefaultListWithEmulator"];
+  NSURL *expectedURL =
+      [NSURL URLWithString:@"https://localhost:8080/v0/b/bucket/o?prefix=object/&delimiter=/"];
+
+  [self.storage useEmulatorWithHost:@"localhost" port:8080];
+  self.fetcherService.testBlock =
+      ^(GTMSessionFetcher *fetcher, GTMSessionFetcherTestResponse response) {
+        XCTAssertEqualObjects(fetcher.request.URL, expectedURL);  // Implicitly retains self
+        NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:fetcher.request.URL
+                                                                      statusCode:200
+                                                                     HTTPVersion:kHTTPVersion
+                                                                    headerFields:nil];
+        response(httpResponse, nil, nil);
+      };
+
+  FIRStoragePath *path = [FIRStorageTestHelpers objectPath];
+  FIRStorageReference *ref = [[FIRStorageReference alloc] initWithStorage:self.storage path:path];
+  FIRStorageListTask *task = [[FIRStorageListTask alloc]
+      initWithReference:ref
+         fetcherService:self.fetcherService
+          dispatchQueue:self.dispatchQueue
+               pageSize:nil
+      previousPageToken:nil
+             completion:^(FIRStorageListResult *result, NSError *error) {
+               [expectation fulfill];
+             }];
+  [task enqueue];
+
+  [FIRStorageTestHelpers waitForExpectation:self];
+}
+
 - (void)testListWithPageSizeAndPageToken {
   XCTestExpectation *expectation =
       [self expectationWithDescription:@"testListWithPageSizeAndPageToken"];

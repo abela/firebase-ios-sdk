@@ -100,6 +100,11 @@ static NSTimeInterval kExpectationTimeoutSeconds = 10;
 + (GTMSessionFetcherTestBlock)successBlock;
 
 /**
+ * Returns a successful response block that validates the provided URL.
+ */
++ (GTMSessionFetcherTestBlock)successBlockWithURL:(NSString *)url;
+
+/**
  * Returns a successful response block containing object metadata.
  * @param metadata Metadata returned in the request.
  */

@@ -84,34 +84,42 @@ NSString *const kFIRStorageAppName = @"app";
   if (metadata) {
     data = [NSData frs_dataFromJSONDictionary:[metadata dictionaryRepresentation]];
   }
-  return [FIRStorageTestHelpers blockForData:data statusCode:200];
+  return [FIRStorageTestHelpers blockForData:data URL:nil statusCode:200];
 }
+
++ (GTMSessionFetcherTestBlock)successBlockWithURL:(NSString *)url;
+{ return [FIRStorageTestHelpers blockForData:nil URL:url statusCode:200]; }
 
 + (GTMSessionFetcherTestBlock)unauthenticatedBlock {
   NSData *data = [kUnauthenticatedResponseString dataUsingEncoding:NSUTF8StringEncoding];
-  return [FIRStorageTestHelpers blockForData:data statusCode:401];
+  return [FIRStorageTestHelpers blockForData:data URL:nil statusCode:401];
 }
 
 + (GTMSessionFetcherTestBlock)unauthorizedBlock {
   NSData *data = [kUnauthorizedResponseString dataUsingEncoding:NSUTF8StringEncoding];
-  return [FIRStorageTestHelpers blockForData:data statusCode:403];
+  return [FIRStorageTestHelpers blockForData:data URL:nil statusCode:403];
 }
 
 + (GTMSessionFetcherTestBlock)notFoundBlock {
   NSData *data = [kNotFoundResponseString dataUsingEncoding:NSUTF8StringEncoding];
-  return [FIRStorageTestHelpers blockForData:data statusCode:404];
+  return [FIRStorageTestHelpers blockForData:data URL:nil statusCode:404];
 }
 
 + (GTMSessionFetcherTestBlock)invalidJSONBlock {
   NSData *data = [kInvalidJSONResponseString dataUsingEncoding:NSUTF8StringEncoding];
-  return [FIRStorageTestHelpers blockForData:data statusCode:200];
+  return [FIRStorageTestHelpers blockForData:data URL:nil statusCode:200];
 }
 
 #pragma mark - Private methods
 
-+ (GTMSessionFetcherTestBlock)blockForData:(nullable NSData *)data statusCode:(NSInteger)code {
++ (GTMSessionFetcherTestBlock)blockForData:(nullable NSData *)data
+                                       URL:(nullable NSString *)url
+                                statusCode:(NSInteger)code {
   GTMSessionFetcherTestBlock block =
       ^(GTMSessionFetcher *fetcher, GTMSessionFetcherTestResponse response) {
+        if (url) {
+          XCTAssertEqualObjects(url, [fetcher.request.URL absoluteString]);
+        }
         NSHTTPURLResponse *httpResponse = [[NSHTTPURLResponse alloc] initWithURL:fetcher.request.URL
                                                                       statusCode:code
                                                                      HTTPVersion:kHTTPVersion
